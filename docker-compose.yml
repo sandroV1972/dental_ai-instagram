@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dental}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
+      POSTGRES_DB: ${POSTGRES_DB:-dental_ai}
+    ports:
+      # Host:Container — il container resta su 5432, ma sull'host esponiamo 5433
+      # per evitare conflitto con un Postgres locale gia' in ascolto.
+      - "5433:5432"
+    volumes:
+      - dental_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dental} -d ${POSTGRES_DB:-dental_ai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      ROLE: api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./renders:/app/renders
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  worker:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      ROLE: worker
+    volumes:
+      - ./backend:/app/backend
+    command: ["python", "-m", "backend.app.workers.scheduler"]
+
+volumes:
+  dental_pgdata:

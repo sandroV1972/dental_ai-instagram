@@ -1,0 +1,38 @@
+# Secrets / config locale — MAI committare
+.env
+.env.local
+.ig_token
+
+# Output runtime (immagini renderizzate, possono diventare GB)
+renders/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+
+# DB locali (test, sqlite di sviluppo)
+test.db
+*.sqlite3
+*.db-journal
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Docker (volumi locali generati)
+postgres-data/
+
+# Node (se in futuro)
+node_modules/
